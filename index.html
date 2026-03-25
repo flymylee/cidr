@@ -148,6 +148,7 @@ footer{text-align:center;padding:1.5rem;color:var(--text2);font-size:.82rem;bord
 <header>
   <h1>Subnet Calculator</h1>
   <p>IPv4 CIDR · Binary Visualization · Subnet Splitter</p>
+  <em>Forked from <a href="https://github.com/yurukusa/subnet-calc">Yurukusa's Subnet Calculator</a></em>
 </header>
 <main>
 
@@ -159,10 +160,12 @@ footer{text-align:center;padding:1.5rem;color:var(--text2);font-size:.82rem;bord
         <label>IP Address</label>
         <input type="text" id="ip" value="192.168.1.0" spellcheck="false" autocomplete="off" placeholder="e.g. 10.0.0.0">
       </div>
+<!-- 
       <div class="input-group">
         <label>Prefix</label>
         <select id="cidr-select"></select>
       </div>
+ -->
       <div class="slider-wrap">
         <input type="range" id="cidr-slider" min="0" max="32" value="24">
         <span class="cidr-disp" id="cidr-disp">/24</span>
@@ -286,7 +289,7 @@ function ipType(octets){
 // ── DOM refs ───────────────────────────────────────────────────────────────
 const ipEl=document.getElementById('ip');
 const slider=document.getElementById('cidr-slider');
-const selEl=document.getElementById('cidr-select');
+// const selEl=document.getElementById('cidr-select');
 const dispEl=document.getElementById('cidr-disp');
 const resultsEl=document.getElementById('results');
 const notationEl=document.getElementById('notation');
@@ -302,9 +305,11 @@ const toast=document.getElementById('toast');
 const cidrRefEl=document.getElementById('cidr-ref');
 const classTableEl=document.getElementById('class-table');
 
+/*
 // ── Build CIDR select ──────────────────────────────────────────────────────
 for(let i=0;i<=32;i++){const o=document.createElement('option');o.value=i;o.textContent='/'+i;selEl.appendChild(o)}
 selEl.value=24;
+*/
 
 // ── Presets ────────────────────────────────────────────────────────────────
 const PRESETS=[
@@ -321,9 +326,35 @@ const presetsEl=document.getElementById('presets');
 PRESETS.forEach(p=>{
   const btn=document.createElement('button');
   btn.className='preset-btn';btn.textContent=p.label;
-  btn.onclick=()=>{ipEl.value=p.ip;slider.value=p.cidr;selEl.value=p.cidr;calculate()};
+  // btn.onclick=()=>{ipEl.value=p.ip;slider.value=p.cidr;selEl.value=p.cidr;calculate()};
+  btn.onclick=()=>{ipEl.value=p.ip;slider.value=p.cidr;calculate()};
   presetsEl.appendChild(btn);
 });
+
+// ── IP input change handler ───────────────────────────────────────────────
+function ipInputChange(){
+  const s=ipEl.value.trim();
+  const parts=s.split('/');
+  if(parts.length>2)return; // invalid
+  const ipPart=parts[0];
+  const cidrPart=parts[1];
+  const octets=parseIP(ipPart);
+  ipEl.classList.toggle('err',!octets);
+  if(cidrPart!==undefined){
+    const c=parseInt(cidrPart,10);
+    if(isNaN(c)||c<0||c>32)return; // invalid
+    slider.value=c;
+    // selEl.value=c;
+  }
+  calculate();
+}
+
+// ── Slider Event ──────────────────────────────────────────────────────────
+function sliderChange(){
+  const c=parseInt(slider.value,10);
+  ipEl.value=ipEl.value.split('/')[0]+'/'+c;
+  calculate();
+}
 
 // ── Copy toast ─────────────────────────────────────────────────────────────
 let toastTimer;
@@ -396,9 +427,9 @@ function makeBinRow(label,bin32,cidr){
 function calculate(){
   const cidr=parseInt(slider.value,10);
   dispEl.textContent='/'+cidr;
-  selEl.value=cidr;
+  // selEl.value=cidr;
 
-  const octets=parseIP(ipEl.value);
+  const octets=parseIP(ipEl.value.split('/')[0]);
   ipEl.classList.toggle('err',!octets);
 
   // highlight CIDR ref
@@ -560,9 +591,9 @@ for(let i=0;i<=32;i++){
 }
 
 // ── Event wiring ───────────────────────────────────────────────────────────
-slider.addEventListener('input',calculate);
-selEl.addEventListener('change',()=>{slider.value=selEl.value;calculate()});
-ipEl.addEventListener('input',calculate);
+ipEl.addEventListener('input',ipInputChange);
+slider.addEventListener('input',sliderChange);
+// selEl.addEventListener('change',()=>{slider.value=selEl.value;calculate()});
 
 calculate();
 </script>
